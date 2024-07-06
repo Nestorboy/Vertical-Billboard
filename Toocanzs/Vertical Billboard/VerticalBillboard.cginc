@@ -14,6 +14,15 @@ struct v2f
 	UNITY_VERTEX_OUTPUT_STEREO
 };
 
+float _VRChatMirrorMode;
+float3 _VRChatMirrorCameraPos;
+
+#if defined(USING_STEREO_MATRICES)
+	#define _CenteredCameraPos ((unity_StereoWorldSpaceCameraPos[0] + unity_StereoWorldSpaceCameraPos[1]) * 0.5)
+#else
+	#define _CenteredCameraPos (_VRChatMirrorMode != 0 ? _VRChatMirrorCameraPos : _WorldSpaceCameraPos)
+#endif
+
 sampler2D _MainTex;
 float4 _MainTex_ST;
 
@@ -25,13 +34,7 @@ v2f vert(appdata v)
 	UNITY_INITIALIZE_OUTPUT(v2f, o);
 	UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-	#if defined(USING_STEREO_MATRICES)
-		float3 cameraPos = lerp(unity_StereoWorldSpaceCameraPos[0], unity_StereoWorldSpaceCameraPos[1], 0.5);
-	#else
-		float3 cameraPos = _WorldSpaceCameraPos;
-	#endif
-
-	float3 forward = normalize(cameraPos - mul(unity_ObjectToWorld, float4(0, 0, 0, 1)).xyz);
+	float3 forward = normalize(_CenteredCameraPos - mul(unity_ObjectToWorld, float4(0, 0, 0, 1)).xyz);
 	float3 right = cross(forward, float3(0, 1, 0));
 	float yawCamera = atan2(right.x, forward.x) - UNITY_PI / 2;//Add 90 for quads to face towards camera
 	float s, c;
